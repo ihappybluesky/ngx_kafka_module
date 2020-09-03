@@ -449,8 +449,19 @@ static void ngx_http_kafka_post_callback_handler(ngx_http_request_t *r)
      *
      * */
     conn_log = r->connection->log;
-    rc = rd_kafka_produce(local_conf->rkt, (int32_t)local_conf->partition,
+    if(r->args.len>4)
+    {//?key=kafkakey 存储数据到kafka时设置key为请求参数中key的值
+        rc = rd_kafka_produce(local_conf->rkt, (int32_t)local_conf->partition,
+            RD_KAFKA_MSG_F_COPY, (void *)msg, len, (const void *)(r->args.data+4), r->args.len-4, conn_log);
+    }
+    else
+    {
+        rc = rd_kafka_produce(local_conf->rkt, (int32_t)local_conf->partition,
             RD_KAFKA_MSG_F_COPY, (void *)msg, len, NULL, 0, conn_log);
+    }
+    /*rc = rd_kafka_produce(local_conf->rkt, (int32_t)local_conf->partition,
+            RD_KAFKA_MSG_F_COPY, (void *)msg, len, NULL, 0, conn_log);
+    */
     if (rc != 0) {
         ngx_log_error(NGX_LOG_ERR, conn_log, 0,
                 rd_kafka_err2str(rd_kafka_last_error()));
